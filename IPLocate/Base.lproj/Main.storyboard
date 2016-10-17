@@ -77,7 +77,9 @@
                                     <action selector="findCurrentLocation:" destination="BYZ-38-t0r" eventType="touchUpInside" id="YpX-Dn-XDz"/>
                                 </connections>
                             </button>
-                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="xJH-OV-UQF">
+                            <view contentMode="scaleToFill" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="xJH-OV-UQF">
+                                <frame key="frameInset" minX="16" minY="40" width="45" height="45"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <subviews>
                                     <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="oQc-BC-WBl">
                                         <frame key="frameInset" minX="2" minY="2" width="40" height="40"/>
@@ -89,10 +91,6 @@
                                     </button>
                                 </subviews>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="45" id="qBH-KA-pUa"/>
-                                    <constraint firstAttribute="height" constant="45" id="zB5-r6-pYq"/>
-                                </constraints>
                             </view>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="i3E-EA-rtI">
                                 <subviews>
@@ -157,8 +155,6 @@
                             <constraint firstItem="CSl-V8-4zh" firstAttribute="trailing" secondItem="8bC-Xf-vdC" secondAttribute="trailingMargin" id="ENd-bE-ZRP"/>
                             <constraint firstItem="i3E-EA-rtI" firstAttribute="top" secondItem="y3c-jy-aDJ" secondAttribute="bottom" constant="20" id="GbH-Rp-Rlm"/>
                             <constraint firstItem="wfy-db-euE" firstAttribute="top" secondItem="KsI-n8-s0G" secondAttribute="bottom" constant="20" id="HLl-8p-TTR"/>
-                            <constraint firstItem="xJH-OV-UQF" firstAttribute="top" secondItem="y3c-jy-aDJ" secondAttribute="bottom" constant="20" id="Kbi-QP-lH0"/>
-                            <constraint firstItem="xJH-OV-UQF" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leadingMargin" id="TCL-ie-4VH"/>
                             <constraint firstItem="KsI-n8-s0G" firstAttribute="top" secondItem="PX5-fn-uLQ" secondAttribute="bottom" constant="8" id="YGa-NS-j95"/>
                             <constraint firstItem="i3E-EA-rtI" firstAttribute="trailing" secondItem="8bC-Xf-vdC" secondAttribute="trailingMargin" id="ZHM-Qn-56c"/>
                             <constraint firstItem="CSl-V8-4zh" firstAttribute="top" secondItem="i3E-EA-rtI" secondAttribute="bottom" constant="8" id="ZPa-Y7-ZWd"/>

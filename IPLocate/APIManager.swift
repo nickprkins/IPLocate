@@ -27,8 +27,15 @@ class APIManager {
     }
     
     
-    func findIPAddress(ipaddress: String) {
-        self.baseUrl = NSURL(string: "\(self.url)key=\(self.key)&ip=\(ipaddress)&format=\(self.format)")!
+    func findIPAddress(ipaddress: String?) {
+        // If nil, then return user's IP Address
+        var userIP: Bool = false
+        if ipaddress == nil {
+            self.baseUrl = NSURL(string: "\(self.url)key=\(self.key)&format=\(self.format)")!
+            userIP = true
+        }else{
+        self.baseUrl = NSURL(string: "\(self.url)key=\(self.key)&ip=\(ipaddress!)&format=\(self.format)")!
+        }
         let urlRequest: NSMutableURLRequest = NSMutableURLRequest(url: baseUrl as URL)
         let session = URLSession.shared
         let task = session.dataTask(with: urlRequest as URLRequest) {
@@ -45,7 +52,11 @@ class APIManager {
                     
                     let newItem = IPAddress(dictionary: json as NSDictionary)
                     let data =  ["ipaddress" : newItem]
-                    NotificationCenter.default.post(name: NSNotification.Name(rawValue: "HaveGoodIPAddress"), object: nil, userInfo: data)
+                    if userIP {
+                    NotificationCenter.default.post(name: NSNotification.Name(rawValue: "UserIPAddress"), object: nil, userInfo: data)
+                    }else{
+                        NotificationCenter.default.post(name: NSNotification.Name(rawValue: "HaveGoodIPAddress"), object: nil, userInfo: data)
+                    }
                 }catch {
                     print("Error with Json: \(error)")
                 }
