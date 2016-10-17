@@ -14,16 +14,20 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     @IBOutlet var searchViewButton: UIButton!
     @IBOutlet var mapView: MKMapView!
     @IBOutlet var searchView: UIView!
+    @IBOutlet var ipAddressRangeTextField: UITextField!
+    @IBOutlet var ipAddressSingleTextField: UITextField!
+    @IBOutlet var searchViewSegmentControl: UISegmentedControl!
+    @IBOutlet var searchViewToLabel: UILabel!
+    @IBOutlet var ipaddressCloneTextField: UILabel!
     @IBOutlet var currentLocationButton: UIButton!
     @IBOutlet var ipAddressesInfoView: UIView!
     @IBOutlet var showAllPinsButton: UIButton!
-    
-    
+    @IBOutlet var listViewButton: UIButton!
+    @IBOutlet var searchLayoutWidth: NSLayoutConstraint!
+    @IBOutlet var searchLayoutHeight: NSLayoutConstraint!
     
     var client: APIManager!
     var results: Array<IPAddress>! = []
-    var searchViewConstraintsInActive: Array<NSLayoutConstraint>! = []
-    var searchViewConstraintsActive: Array<NSLayoutConstraint>! = []
     var searchViewActive: Bool = false
     
     
@@ -31,42 +35,31 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         super.viewDidLoad()
         // MapView setup
         mapView.delegate = self
+        
         mapView.showsUserLocation = true
         
         // API Setup
         self.client = APIManager()
         
+        //Decimal Pad ToolBar
+        let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: self.view.bounds.width, height: 50))
+        toolbar.barTintColor = UIColor.lightGray
+        toolbar.items = [
+                UIBarButtonItem.init(barButtonSystemItem: UIBarButtonSystemItem.cancel, target: self, action: #selector(cancelKeyboard)),
+                UIBarButtonItem.init(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil),
+                UIBarButtonItem.init(barButtonSystemItem: UIBarButtonSystemItem.search, target: self, action: #selector(findIPOnMap))]
+        toolbar.sizeToFit()
+        ipAddressSingleTextField.inputAccessoryView = toolbar
+        
         // NotificationCenter observers
         NotificationCenter.default.addObserver(self, selector: #selector(self.addAnnotationToMap(_:)), name: NSNotification.Name(rawValue: "HaveGoodIPAddress"), object: nil)
     }
     
-    override func viewWillLayoutSubviews() {
-        // Setup Search View Button Constraints for Active and InActive Taps
-        let margins = view.layoutMarginsGuide
-        
-        let topConstraint = searchView.topAnchor.constraint(equalTo: margins.topAnchor, constant: 20)
-        let leadingConstraint = searchView.leadingAnchor.constraint(equalTo: margins.leadingAnchor)
-        let widthInActiveConstraint = NSLayoutConstraint(item: searchView, attribute: .width, relatedBy: .equal, toItem: .none, attribute: .notAnAttribute, multiplier: 1.0, constant: 45)
-        let heightInActiveConstraint = NSLayoutConstraint(item: searchView, attribute: .height, relatedBy: .equal, toItem: searchView, attribute: .width
-            , multiplier: 1.0, constant: 1)
-        
-        searchViewConstraintsInActive.append(topConstraint)
-        searchViewConstraintsInActive.append(widthInActiveConstraint)
-        searchViewConstraintsInActive.append(heightInActiveConstraint)
-        searchViewConstraintsInActive.append(leadingConstraint)
-        
-        
-        view.addConstraints(searchViewConstraintsInActive)
-        view.layoutIfNeeded()
-        
-        //Go ahead and setup Active Constraints when the button is tapped and search fields are present.
-        let widthActiveConstraint = NSLayoutConstraint(item: searchView, attribute: .width, relatedBy: .equal, toItem: view, attribute: .width, multiplier: 0.8, constant: 1)
-        let heightActiveConstraint = NSLayoutConstraint(item: searchView, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1.0, constant: 100)
-        
-        searchViewConstraintsActive.append(topConstraint)
-        searchViewConstraintsActive.append(widthActiveConstraint)
-        searchViewConstraintsActive.append(heightActiveConstraint)
-        
+    override func viewWillAppear(_ animated: Bool) {
+        //Apply Shadows to Buttons and UIViews
+        applyShadow(object: searchView)
+        applyShadow(object: currentLocationButton)
+        applyShadow(object: listViewButton)
     }
 
     
@@ -124,20 +117,72 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     @IBAction func changeSearchView(_ sender: AnyObject) {
         
         if searchViewActive {
-            self.view.removeConstraints(searchViewConstraintsActive)
-            UIView.animate(withDuration: 1.0, animations: { 
-                self.view.addConstraints(self.searchViewConstraintsInActive)
+            searchLayoutWidth.constant = self.view.bounds.width * 0.9
+            searchLayoutHeight.constant = 200
+            self.searchViewSegmentControl.isHidden = false
+            self.ipAddressSingleTextField.isHidden = false
+            UIView.animate(withDuration: 0.7, animations: {
+                self.searchView.layer.cornerRadius = 5
                 self.view.layoutIfNeeded()
+                
+                
+                
             })
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(400), execute: {
+                // make form visible
+                self.searchViewSegmentControl.alpha = 1
+                self.ipAddressSingleTextField.alpha = 1
+            })
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500), execute: {
+                self.searchViewButton.setImage(UIImage(named: "closeIcon.png"), for: .normal)
+                self.ipAddressSingleTextField.becomeFirstResponder()
+            })
+            
             searchViewActive = false
         }else{
-            self.view.removeConstraints(searchViewConstraintsInActive)
-            UIView.animate(withDuration: 1.0, animations: { 
-                self.view.addConstraints(self.searchViewConstraintsActive)
+            searchLayoutWidth.constant = 45
+            searchLayoutHeight.constant = 45
+            self.ipAddressSingleTextField.resignFirstResponder()
+            UIView.animate(withDuration: 0.7, animations: {
+                self.searchView.layer.cornerRadius = 0
                 self.view.layoutIfNeeded()
             })
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(200), execute: {
+                // make form invisible
+                self.searchViewSegmentControl.alpha = 0
+                self.ipAddressSingleTextField.alpha = 0
+            })
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500), execute: {
+                self.searchViewButton.setImage(UIImage(named: "logoIcon.png"), for: .normal)
+                self.searchViewSegmentControl.isHidden = true
+                self.ipAddressSingleTextField.isHidden = true
+            })
+
+            
             searchViewActive = true
         }
+        
+    }
+    
+    func applyShadow(object: AnyObject) {
+        let layer = object.layer!
+        
+        layer.shadowColor = UIColor.darkGray.cgColor
+        layer.shadowOffset = CGSize(width: 3, height: 3)
+        layer.shadowOpacity = 0.4
+        layer.shadowRadius = 5
+    }
+    
+    func cancelKeyboard() {
+        self.ipAddressSingleTextField.text = ""
+        self.ipAddressSingleTextField.resignFirstResponder()
+    }
+    
+    func findIPOnMap() {
+        var singleTextField = self.ipAddressSingleTextField.text!
+        self.ipAddressSingleTextField.resignFirstResponder()
         
     }
 }
