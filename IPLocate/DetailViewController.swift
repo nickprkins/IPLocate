@@ -9,11 +9,14 @@
 import UIKit
 
 class DetailViewController: UIViewController {
+    
+    var passedValue: String!
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        print(passedValue)
         // Do any additional setup after loading the view.
+        
     }
 
     override func didReceiveMemoryWarning() {

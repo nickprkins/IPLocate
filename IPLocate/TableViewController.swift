@@ -12,6 +12,7 @@ class TableViewController: UITableViewController {
     
     var results: Array<IPAddress> = []
     let defaults = UserDefaults.standard
+    var valueToPass: String!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -55,11 +56,21 @@ class TableViewController: UITableViewController {
         cell.imageView?.image = UIImage(contentsOfFile: imageFilePath)
         cell.textLabel?.text = "\(data.theIPAddress)"
         
-        cell.detailTextLabel?.text = "\(data.countryName)"
+        cell.detailTextLabel?.text = "\(data.regionName), \(data.countryName)"
 
         return cell
     }
  
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        
+        let indexPath = tableView.indexPathForSelectedRow!
+        let cell = tableView.cellForRow(at: indexPath)! as UITableViewCell
+        
+        self.valueToPass = cell.textLabel?.text
+        print(valueToPass)
+        performSegue(withIdentifier: "detailVCSegue", sender: self)
+        
+    }
 
     /*
     // Override to support conditional editing of the table view.
@@ -100,8 +111,20 @@ class TableViewController: UITableViewController {
     // MARK: - Navigation
 
     // In a storyboard-based application, you will often want to do a little preparation before navigation
+    // Unwind to close TableViewController that is presented modally
     @IBAction func closeModalViewController(sender: UIBarButtonItem) {
         self.dismiss(animated: true, completion: nil)
+    }
+    
+    // Send user to DetailViewController and pass data for displaying
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if(segue.identifier == "detailVCSegue") {
+            let vc = segue.destination as! DetailViewController
+            print(valueToPass)
+            vc.passedValue = valueToPass
+        }else{
+            print("Another Segue was called that is not available.")
+        }
     }
     
     // MARK: - Functions
@@ -110,11 +133,13 @@ class TableViewController: UITableViewController {
         //Is their data saved in UserDefaults? Yes: retrieve No: create
         if let data = self.defaults.object(forKey: "PinsOnMap") as? NSData {
             self.results = NSKeyedUnarchiver.unarchiveObject(with: data as Data) as! Array<IPAddress>!
+            self.results.sort(by: { $0.countryName < $1.countryName })
             print("I have data!")
         }else{
             self.defaults.set(NSKeyedArchiver.archivedData(withRootObject: self.results), forKey: "PinsOnMap")
             if let data = self.defaults.object(forKey: "PinsOnMap") as? NSData {
                 self.results = NSKeyedUnarchiver.unarchiveObject(with: data as Data) as! Array<IPAddress>!
+                self.results.sort(by: { $0.countryName < $1.countryName })
                 print("I created data, now it is all mine!")
             }
         }

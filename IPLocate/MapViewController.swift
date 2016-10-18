@@ -74,6 +74,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
             pinView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: reuseID)
             pinView!.canShowCallout = true
             pinView!.animatesDrop = true
+            pinView!.rightCalloutAccessoryView = UIButton(type: .detailDisclosure)
         }
         return pinView
     }
@@ -102,10 +103,15 @@ class MapViewController: UIViewController, MKMapViewDelegate {
             let latitude = CLLocationDegrees((newIPAddress?.latitude)!)
             let longitude = CLLocationDegrees((newIPAddress?.longitude)!)
             let coordinates = CLLocationCoordinate2D(latitude: latitude!, longitude: longitude!)
-            let newPin = MapPin(coordinate: coordinates, title: (newIPAddress?.theIPAddress)!, subtitle: "\(newIPAddress!.cityName), \(newIPAddress!.countryName)")
+            let newPin = MapPin(coordinate: coordinates, title: (newIPAddress?.theIPAddress)!, subtitle: "\(newIPAddress!.cityName), \(newIPAddress!.regionName)")
             DispatchQueue.main.async {
                //This is run on the main queue, after the previous code in outer block
                 self.mapView.addAnnotation(newPin)
+                
+                let region = MKCoordinateRegionMakeWithDistance(newPin.coordinate, 2000, 2000)
+                
+                self.mapView.setRegion(region, animated: true)
+                
             }
         }
         
@@ -117,7 +123,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         
         let region = MKCoordinateRegionMakeWithDistance(userLocation.coordinate, 2000, 2000)
         
-        mapView.setRegion(region, animated: true)
+        self.mapView.setRegion(region, animated: true)
         
     }
     

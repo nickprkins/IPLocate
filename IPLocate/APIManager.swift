@@ -52,7 +52,7 @@ class APIManager {
                     
                     let newItem = IPAddress(dictionary: json as NSDictionary)
                     
-                    if newItem.latitude == "0" && newItem.longitude == "0" {
+                    if newItem.latitude == "0" && newItem.longitude == "0" && newItem.statusCode == "OK" {
                         
                         let data = ["ipaddress" : newItem]
                         
