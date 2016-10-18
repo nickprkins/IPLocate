@@ -243,18 +243,34 @@
         <!--Table View Controller-->
         <scene sceneID="X8I-nS-1d3">
             <objects>
-                <tableViewController id="bk6-ce-fPl" sceneMemberID="viewController">
+                <tableViewController id="bk6-ce-fPl" customClass="TableViewController" customModule="IPLocate" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="44" sectionHeaderHeight="28" sectionFooterHeight="28" id="cSx-FW-xUr">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <prototypes>
-                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" indentationWidth="10" id="BPZ-0E-lr4">
+                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" selectionStyle="default" accessoryType="disclosureIndicator" indentationWidth="10" reuseIdentifier="cell" textLabel="x69-5y-aB0" detailTextLabel="uCf-JD-Iio" style="IBUITableViewCellStyleValue1" id="BPZ-0E-lr4">
                                 <rect key="frame" x="0.0" y="92" width="375" height="44"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="BPZ-0E-lr4" id="9Of-5j-OlO">
-                                    <frame key="frameInset" width="375" height="43"/>
+                                    <frame key="frameInset" width="342" height="43"/>
                                     <autoresizingMask key="autoresizingMask"/>
+                                    <subviews>
+                                        <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" text="Title" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="x69-5y-aB0">
+                                            <frame key="frameInset" minX="15" minY="11" width="34" height="21"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                            <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                            <nil key="textColor"/>
+                                            <nil key="highlightedColor"/>
+                                        </label>
+                                        <label opaque="NO" multipleTouchEnabled="YES" contentMode="left" text="Detail" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" id="uCf-JD-Iio">
+                                            <frame key="frameInset" minX="296" minY="11" width="44" height="21"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                            <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                            <nil key="textColor"/>
+                                            <nil key="highlightedColor"/>
+                                        </label>
+                                    </subviews>
                                 </tableViewCellContentView>
                                 <connections>
                                     <segue destination="iTc-Sb-001" kind="show" id="KJM-zG-nio"/>
@@ -267,17 +283,21 @@
                         </connections>
                     </tableView>
                     <navigationItem key="navigationItem" id="adx-1K-5mL">
-                        <barButtonItem key="rightBarButtonItem" systemItem="done" id="hEk-yS-UiG"/>
+                        <barButtonItem key="rightBarButtonItem" systemItem="done" id="hEk-yS-UiG">
+                            <connections>
+                                <action selector="closeModalViewControllerWithSender:" destination="bk6-ce-fPl" id="wmr-KR-ZjF"/>
+                            </connections>
+                        </barButtonItem>
                     </navigationItem>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="kTZ-MY-e9R" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
             <point key="canvasLocation" x="937" y="807"/>
         </scene>
-        <!--View Controller-->
+        <!--Detail View Controller-->
         <scene sceneID="f6X-73-24C">
             <objects>
-                <viewController id="FVX-lx-dgf" sceneMemberID="viewController">
+                <viewController id="FVX-lx-dgf" customClass="DetailViewController" customModule="IPLocate" customModuleProvider="target" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="gGA-VG-FgJ"/>
                         <viewControllerLayoutGuide type="bottom" id="2Lj-g1-qXA"/>
@@ -337,6 +357,6 @@
         <image name="logoIcon" width="29" height="29"/>
     </resources>
     <inferredMetricsTieBreakers>
-        <segue reference="brY-1D-k5u"/>
+        <segue reference="KJM-zG-nio"/>
     </inferredMetricsTieBreakers>
 </document>

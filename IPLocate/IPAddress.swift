@@ -9,11 +9,26 @@
 import Foundation
 
 
-class IPAddress {
+class IPAddress: NSObject, NSCoding {
     var dictionary: NSDictionary
     
     init(dictionary: NSDictionary) {
         self.dictionary = dictionary
+    }
+    
+    // MARK: NSCoding
+    
+    required convenience init?(coder aDecoder: NSCoder) {
+        guard let dictionary = aDecoder.decodeObject(forKey: "dictionary") as? NSDictionary
+            else { return nil }
+        
+        self.init(
+            dictionary: dictionary
+        )
+    }
+    
+    public func encode(with aCoder: NSCoder) {
+        aCoder.encode(self.dictionary, forKey: "dictionary")
     }
     
     var statusCode: String {
@@ -81,5 +96,4 @@ class IPAddress {
             return self.dictionary["timeZone"] as! String
         }
     }
-    
 }

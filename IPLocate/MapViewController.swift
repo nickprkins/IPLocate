@@ -29,30 +29,30 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     var client: APIManager!
     var results: Array<IPAddress>! = []
     var searchViewActive: Bool = false
+    let defaults = UserDefaults.standard
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         // MapView setup
         mapView.delegate = self
-        
         mapView.showsUserLocation = true
         
         // API Setup
         self.client = APIManager()
         
-        //Decimal Pad ToolBar
-        let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: self.view.bounds.width, height: 50))
-        toolbar.barTintColor = UIColor.lightGray
-        toolbar.items = [
-                UIBarButtonItem.init(barButtonSystemItem: UIBarButtonSystemItem.cancel, target: self, action: #selector(cancelKeyboard)),
-                UIBarButtonItem.init(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil),
-                UIBarButtonItem.init(barButtonSystemItem: UIBarButtonSystemItem.search, target: self, action: #selector(findIPOnMap))]
-        toolbar.sizeToFit()
-        ipAddressSingleTextField.inputAccessoryView = toolbar
+        //Get data from UserDefaults add to Map
+        getData()
+        loadDataToMap()
+        
+        //Create Keyboard ToolBar
+        createKeyboardToolbar()
         
         // NotificationCenter observers
         NotificationCenter.default.addObserver(self, selector: #selector(self.addAnnotationToMap(_:)), name: NSNotification.Name(rawValue: "HaveGoodIPAddress"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(self.changeSearchView(_:)), name: NSNotification.Name(rawValue: "CloseSearchView"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(self.badIPAddressAlert(_:)), name: NSNotification.Name(rawValue: "HaveBadIPAddress"), object: nil)
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -91,6 +91,13 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         DispatchQueue.global(qos: .background).async {
             //This is run on the background queue
             self.results.append((notification.userInfo?["ipaddress"] as? IPAddress)!)
+            
+            //Update UserDefaults Stored Data
+            self.defaults.set(NSKeyedArchiver.archivedData(withRootObject: self.results), forKey: "PinsOnMap")
+            if let data = self.defaults.object(forKey: "PinsOnMap") as? NSData {
+                self.results = NSKeyedUnarchiver.unarchiveObject(with: data as Data) as! Array<IPAddress>!
+            }
+            
             let newIPAddress = self.results.last
             let latitude = CLLocationDegrees((newIPAddress?.latitude)!)
             let longitude = CLLocationDegrees((newIPAddress?.longitude)!)
@@ -166,6 +173,55 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         
     }
     
+    func getData() {
+        //Is their data saved in UserDefaults? Yes: retrieve No: create
+        if let data = self.defaults.object(forKey: "PinsOnMap") as? NSData {
+            self.results = NSKeyedUnarchiver.unarchiveObject(with: data as Data) as! Array<IPAddress>!
+            print("I have data!")
+        }else{
+            self.defaults.set(NSKeyedArchiver.archivedData(withRootObject: self.results), forKey: "PinsOnMap")
+            if let data = self.defaults.object(forKey: "PinsOnMap") as? NSData {
+                self.results = NSKeyedUnarchiver.unarchiveObject(with: data as Data) as! Array<IPAddress>!
+                print("I created data, now it is all mine!")
+            }
+        }
+    }
+    
+    func loadDataToMap() {
+        for pin in self.results {
+            
+            let latitude = CLLocationDegrees((pin.latitude))
+            let longitude = CLLocationDegrees((pin.longitude))
+            let coordinates = CLLocationCoordinate2D(latitude: latitude!, longitude: longitude!)
+            let newPin = MapPin(coordinate: coordinates, title: (pin.theIPAddress), subtitle: "\(pin.cityName), \(pin.countryName)")
+            
+            self.mapView.addAnnotation(newPin)
+        }
+    }
+    
+    func badIPAddressAlert(_ notification: NSNotification) {
+        
+        let data = notification.userInfo?["ipaddress"] as! IPAddress
+        
+        let alertController = UIAlertController(title: "\(data.theIPAddress) Unavailable", message: "This IP Address could not be found.", preferredStyle: .alert)
+        
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel) { (action) in
+            // ...
+        }
+        alertController.addAction(cancelAction)
+        
+        let OKAction = UIAlertAction(title: "OK", style: .default) { (action) in
+            // ...
+        }
+        alertController.addAction(OKAction)
+        
+        self.present(alertController, animated: true) {
+            // ...
+        }
+        
+        
+    }
+    
     func applyShadow(object: AnyObject) {
         let layer = object.layer!
         
@@ -175,6 +231,19 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         layer.shadowRadius = 5
     }
     
+    func createKeyboardToolbar() {
+        
+        let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: self.view.bounds.width, height: 50))
+        toolbar.barTintColor = UIColor(red: 244/255.0, green: 244/255.0, blue: 244/255.0, alpha: 1.0)
+        toolbar.items = [
+            UIBarButtonItem.init(barButtonSystemItem: UIBarButtonSystemItem.cancel, target: self, action: #selector(cancelKeyboard)),
+            UIBarButtonItem.init(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil),
+            UIBarButtonItem.init(barButtonSystemItem: UIBarButtonSystemItem.search, target: self, action: #selector(findIPOnMap))]
+        toolbar.sizeToFit()
+        ipAddressSingleTextField.inputAccessoryView = toolbar
+        
+    }
+    
     func cancelKeyboard() {
         self.ipAddressSingleTextField.text = ""
         self.ipAddressSingleTextField.resignFirstResponder()
@@ -182,8 +251,10 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     
     func findIPOnMap() {
         var singleTextField = self.ipAddressSingleTextField.text!
+        self.ipAddressSingleTextField.text = ""
         self.ipAddressSingleTextField.resignFirstResponder()
-        
+        NotificationCenter.default.post(name: NSNotification.Name(rawValue: "CloseSearchView"), object: nil)
+        self.client.findIPAddress(ipaddress: singleTextField)
     }
 }
 

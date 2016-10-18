@@ -51,11 +51,22 @@ class APIManager {
                     let json = try JSONSerialization.jsonObject(with: data!, options:.allowFragments) as! [String:String]
                     
                     let newItem = IPAddress(dictionary: json as NSDictionary)
-                    let data =  ["ipaddress" : newItem]
-                    if userIP {
-                    NotificationCenter.default.post(name: NSNotification.Name(rawValue: "UserIPAddress"), object: nil, userInfo: data)
+                    
+                    if newItem.latitude == "0" && newItem.longitude == "0" {
+                        
+                        let data = ["ipaddress" : newItem]
+                        
+                        NotificationCenter.default.post(name: NSNotification.Name(rawValue: "HaveBadIPAddress"), object: nil, userInfo: data)
+                        
                     }else{
-                        NotificationCenter.default.post(name: NSNotification.Name(rawValue: "HaveGoodIPAddress"), object: nil, userInfo: data)
+                        
+                        let data =  ["ipaddress" : newItem]
+                        
+                        if userIP {
+                            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "UserIPAddress"), object: nil, userInfo: data)
+                        }else{
+                            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "HaveGoodIPAddress"), object: nil, userInfo: data)
+                        }
                     }
                 }catch {
                     print("Error with Json: \(error)")
