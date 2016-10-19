@@ -153,7 +153,8 @@ class MapViewController: UIViewController, MKMapViewDelegate {
                 let annotation = _annotation
                 let title = annotation.title!
                 if title == pin.title! {
-                    self.mapView.removeAnnotation(pin)
+                    self.mapView.removeAnnotation(annotation)
+                    print("\(annotation.title) was deleted and removed from the map.")
                     break
                 }
             }
