@@ -22,6 +22,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         locationManager = CLLocationManager()
         locationManager?.requestWhenInUseAuthorization()
         
+        // Set color for all Navigation Bars
+        let viewController = UINavigationBar.appearance()
+            viewController.barTintColor = UIColor(red: 9/255.0, green: 151/255.0, blue: 187/255.0, alpha: 1.0)
+            viewController.tintColor = UIColor.white
+        
+        let attrs = [
+            NSForegroundColorAttributeName: UIColor.white
+        ]
+        viewController.titleTextAttributes = attrs
+
+        
         return true
     }
 

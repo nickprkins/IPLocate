@@ -25,11 +25,16 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     @IBOutlet var listViewButton: UIButton!
     @IBOutlet var searchLayoutWidth: NSLayoutConstraint!
     @IBOutlet var searchLayoutHeight: NSLayoutConstraint!
+    @IBOutlet var numberOfPins: UILabel!
+    @IBOutlet var ipIconImageView: UIImageView!
+    @IBOutlet var pinsActivityIndicator: UIActivityIndicatorView!
+    
     
     var client: APIManager!
     var results: Array<IPAddress>! = []
     var searchViewActive: Bool = false
     let defaults = UserDefaults.standard
+    var decimalCount = 0
     
     
     override func viewDidLoad() {
@@ -38,6 +43,13 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         // MapView setup
         mapView.delegate = self
         mapView.showsUserLocation = true
+        self.ipAddressesInfoView.isHidden = false
+        UIView.animate(withDuration: 0.7, animations: {
+            
+            self.ipAddressesInfoView.alpha = 1
+            
+            
+        })
         
         // API Setup
         self.client = APIManager()
@@ -45,6 +57,10 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         //Get data from UserDefaults add to Map
         getData()
         loadDataToMap()
+        self.ipAddressSingleTextField.addTarget(self, action:#selector(MapViewController.cloneText(sender:)), for:UIControlEvents.editingChanged)
+        
+        self.numberOfPins.text = "\(self.results.count)"
+        
         
         //Create Keyboard ToolBar
         createKeyboardToolbar()
@@ -53,6 +69,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(self.addAnnotationToMap(_:)), name: NSNotification.Name(rawValue: "HaveGoodIPAddress"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(self.changeSearchView(_:)), name: NSNotification.Name(rawValue: "CloseSearchView"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(self.badIPAddressAlert(_:)), name: NSNotification.Name(rawValue: "HaveBadIPAddress"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(self.removePinFromMap(_:)), name: NSNotification.Name(rawValue: "RemovePinFromMap"), object: nil)
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -65,24 +82,29 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     
     // MARK: MapView Delegate Methods
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
-        if annotation is MKUserLocation {
-            return nil
+        if let annotation = annotation as? MapPin
+        {
+            let identifier = annotation.title
+            var view: MKPinAnnotationView
+            
+            if let dequeuedView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier!) as? MKPinAnnotationView
+            {
+                view = dequeuedView
+                view.annotation = annotation
+            }
+            else
+            {
+                view = MKPinAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+                view.canShowCallout = true
+                view.calloutOffset = CGPoint(x: -5, y: 5)
+                view.animatesDrop = true
+                view.rightCalloutAccessoryView = UIButton(type: .detailDisclosure)
+                view.leftCalloutAccessoryView = UIButton(type: .custom)
+                view.pinTintColor = UIColor(red: 9/255.0, green: 151/255.0, blue: 187/255.0, alpha: 1.0)
+            }
+            return view
         }
-        let reuseID = "pin"
-        var pinView = mapView.dequeueReusableAnnotationView(withIdentifier: reuseID) as? MKPinAnnotationView
-        if(pinView == nil) {
-            pinView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: reuseID)
-            pinView!.canShowCallout = true
-            pinView!.animatesDrop = true
-            pinView!.rightCalloutAccessoryView = UIButton(type: .detailDisclosure)
-        }
-        return pinView
-    }
-    
-    func mapView(_ mapView: MKMapView, didUpdate userLocation: MKUserLocation) {
-        var accuracy: CLLocationAccuracy = (userLocation.location?.horizontalAccuracy)!
-        // for lower battery consumption
-        accuracy = 500.0
+        return nil
     }
     
     // MARK: Functions for View Controller
@@ -117,6 +139,28 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         
     }
     
+    func removePinFromMap(_ notification: NSNotification) {
+        
+        if let pinToRemove = notification.userInfo?["ipaddress"] as? IPAddress {
+            
+            let latitude = CLLocationDegrees((pinToRemove.latitude))
+            let longitude = CLLocationDegrees((pinToRemove.longitude))
+            let coordinates = CLLocationCoordinate2D(latitude: latitude!, longitude: longitude!)
+            let pin = MapPin(coordinate: coordinates, title: (pinToRemove.theIPAddress), subtitle: "\(pinToRemove.cityName), \(pinToRemove.regionName)")
+            
+            let annotations: [MKAnnotation] = self.mapView.annotations
+            for _annotation in annotations {
+                let annotation = _annotation
+                let title = annotation.title!
+                if title == pin.title! {
+                    self.mapView.removeAnnotation(pin)
+                    break
+                }
+            }
+        }
+        
+    }
+    
     @IBAction func findCurrentLocation(_ sender: AnyObject) {
         
         let userLocation = mapView.userLocation
@@ -131,7 +175,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         
         if searchViewActive {
             searchLayoutWidth.constant = self.view.bounds.width * 0.9
-            searchLayoutHeight.constant = 200
+            searchLayoutHeight.constant = 160
             self.searchViewSegmentControl.isHidden = false
             self.ipAddressSingleTextField.isHidden = false
             UIView.animate(withDuration: 0.7, animations: {
@@ -145,6 +189,25 @@ class MapViewController: UIViewController, MKMapViewDelegate {
                 // make form visible
                 self.searchViewSegmentControl.alpha = 1
                 self.ipAddressSingleTextField.alpha = 1
+                
+                self.ipAddressesInfoView.isHidden = false
+                UIView.animate(withDuration: 0.1, animations: {
+                    
+                    self.ipAddressesInfoView.alpha = 0
+                    
+                })
+                
+                if self.searchViewSegmentControl.selectedSegmentIndex == 1 {
+                    
+                    self.ipAddressRangeTextField.isHidden = false
+                    self.ipaddressCloneTextField.isHidden = false
+                    self.searchViewToLabel.isHidden = false
+                    
+                    self.ipaddressCloneTextField.alpha = 1
+                    self.ipAddressRangeTextField.alpha = 1
+                    self.searchViewToLabel.alpha = 1
+                }
+                
             })
             DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500), execute: {
                 self.searchViewButton.setImage(UIImage(named: "closeIcon.png"), for: .normal)
@@ -165,12 +228,33 @@ class MapViewController: UIViewController, MKMapViewDelegate {
                 // make form invisible
                 self.searchViewSegmentControl.alpha = 0
                 self.ipAddressSingleTextField.alpha = 0
+                
+                self.ipAddressesInfoView.isHidden = false
+                UIView.animate(withDuration: 0.7, animations: {
+                    
+                    self.ipAddressesInfoView.alpha = 1
+                    
+                })
+                
+                if self.searchViewSegmentControl.selectedSegmentIndex == 1 {
+                
+                    self.ipAddressRangeTextField.alpha = 0
+                    self.searchViewToLabel.alpha = 0
+                    self.ipaddressCloneTextField.alpha = 0
+                }
             })
             
             DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(500), execute: {
                 self.searchViewButton.setImage(UIImage(named: "logoIcon.png"), for: .normal)
                 self.searchViewSegmentControl.isHidden = true
                 self.ipAddressSingleTextField.isHidden = true
+                
+                if self.searchViewSegmentControl.selectedSegmentIndex == 1 {
+                
+                    self.ipaddressCloneTextField.isHidden = true
+                    self.ipAddressRangeTextField.isHidden = true
+                    self.searchViewToLabel.isHidden = true
+                }
             })
 
             
@@ -205,6 +289,14 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         }
     }
     
+    func updateInformationView() {
+        
+        var intValue = Int(self.numberOfPins.text!)!
+        intValue+=1
+        self.numberOfPins.text = "\(intValue)"
+        
+    }
+    
     func badIPAddressAlert(_ notification: NSNotification) {
         
         let data = notification.userInfo?["ipaddress"] as! IPAddress
@@ -224,8 +316,48 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         self.present(alertController, animated: true) {
             // ...
         }
+    }
+    
+    @IBAction func segmentControlChanged(_ sender: AnyObject) {
         
+        switch searchViewSegmentControl.selectedSegmentIndex
+        {
+        case 0:
+            ipAddressRangeTextField.isHidden = true
+            ipaddressCloneTextField.isHidden = true
+            searchViewToLabel.isHidden = true
+            UIView.animate(withDuration: 0.7, animations: { 
+                self.ipAddressRangeTextField.alpha = 0
+                self.ipaddressCloneTextField.alpha = 0
+                self.searchViewToLabel.alpha = 0
+            })
+            break
+            
+        case 1:
+            ipAddressRangeTextField.isHidden = false
+            ipaddressCloneTextField.isHidden = false
+            searchViewToLabel.isHidden = false
+            UIView.animate(withDuration: 0.7, animations: {
+                self.ipAddressRangeTextField.alpha = 1
+                self.ipaddressCloneTextField.alpha = 1
+                self.searchViewToLabel.alpha = 1
+            })
+            break
+            
+        default:
+            break;
+        }
+    }
+    
+    // A function that will only copy the text into th clone field up until it reaches the third decimal.
+    func cloneText(sender: UITextField) {
+        let userInput = sender.text!
         
+        let arrayOfNumbers = userInput.components(separatedBy: ".")
+        
+        if arrayOfNumbers.count != 4 {
+            self.ipaddressCloneTextField.text = "\(sender.text!)."
+        }
     }
     
     func applyShadow(object: AnyObject) {
@@ -246,21 +378,84 @@ class MapViewController: UIViewController, MKMapViewDelegate {
             UIBarButtonItem.init(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil),
             UIBarButtonItem.init(barButtonSystemItem: UIBarButtonSystemItem.search, target: self, action: #selector(findIPOnMap))]
         toolbar.sizeToFit()
+        
         ipAddressSingleTextField.inputAccessoryView = toolbar
+        ipAddressRangeTextField.inputAccessoryView = toolbar
         
     }
     
     func cancelKeyboard() {
         self.ipAddressSingleTextField.text = ""
+        self.ipAddressRangeTextField.text = ""
+        self.ipaddressCloneTextField.text = ""
         self.ipAddressSingleTextField.resignFirstResponder()
+        self.ipAddressRangeTextField.resignFirstResponder()
     }
     
     func findIPOnMap() {
-        var singleTextField = self.ipAddressSingleTextField.text!
-        self.ipAddressSingleTextField.text = ""
-        self.ipAddressSingleTextField.resignFirstResponder()
-        NotificationCenter.default.post(name: NSNotification.Name(rawValue: "CloseSearchView"), object: nil)
-        self.client.findIPAddress(ipaddress: singleTextField)
+        
+        switch searchViewSegmentControl.selectedSegmentIndex {
+        case 0:
+            let singleTextField = self.ipAddressSingleTextField.text
+            self.ipAddressSingleTextField.text = ""
+            self.ipAddressSingleTextField.resignFirstResponder()
+            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "CloseSearchView"), object: nil)
+            var commaArray = [String]()
+            commaArray = (singleTextField?.components(separatedBy: ","))!
+            
+                for ipAddress in commaArray {
+                    self.client.findIPAddress(ipaddress: ipAddress)
+            }
+            
+            
+            break
+        case 1:
+            let firstTextField = self.ipAddressSingleTextField.text
+            let targetNumber = self.ipAddressRangeTextField.text
+            self.ipAddressSingleTextField.text = ""
+            self.ipAddressSingleTextField.resignFirstResponder()
+            self.ipAddressRangeTextField.text = ""
+            self.ipAddressRangeTextField.resignFirstResponder()
+            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "CloseSearchView"), object: nil)
+            
+            DispatchQueue.global(qos: .background).async {
+                // Create range of IP Addresses into an Array
+                
+                var array = firstTextField?.components(separatedBy: ".")
+                let targetIntNumber = Int(targetNumber!)
+                var startNumber = Int((array?.last!)!)
+                array!.removeLast()
+                var ipAddressRangeArray: [String] = [String]()
+                var newIP: String = ""
+                
+                
+                // Building IP Address Range Array
+                while startNumber! <= targetIntNumber! {
+                    
+                    for number in array! {
+                        let num = String(number)!
+                        newIP.append("\(num).")
+                    }
+                    newIP.append("\(startNumber!)")
+                    ipAddressRangeArray.append(newIP)
+                    newIP.removeAll()
+                    
+                    startNumber = startNumber! + 1
+                    
+                }
+                
+                // Send each IPAddress in array to APIManager
+                for ipAddress in ipAddressRangeArray {
+                    
+                    self.client.findIPAddress(ipaddress: ipAddress)
+                    
+                }
+                self.ipIconImageView.isHidden = true
+                self.pinsActivityIndicator.isHidden = false
+            }
+            break
+        default:
+            break
+        }
     }
 }
-

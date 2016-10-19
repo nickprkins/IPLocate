@@ -57,6 +57,7 @@ class APIManager {
                         let data = ["ipaddress" : newItem]
                         
                         NotificationCenter.default.post(name: NSNotification.Name(rawValue: "HaveBadIPAddress"), object: nil, userInfo: data)
+                        print("Bad Address")
                         
                     }else{
                         
@@ -66,6 +67,7 @@ class APIManager {
                             NotificationCenter.default.post(name: NSNotification.Name(rawValue: "UserIPAddress"), object: nil, userInfo: data)
                         }else{
                             NotificationCenter.default.post(name: NSNotification.Name(rawValue: "HaveGoodIPAddress"), object: nil, userInfo: data)
+                            print("Good Address")
                         }
                     }
                 }catch {
