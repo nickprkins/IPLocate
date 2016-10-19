@@ -28,18 +28,15 @@ class TableViewController: UITableViewController {
         
         //Get data from UserDefaults
         getData()
+        
+        // NotificationCenter observers
+        NotificationCenter.default.addObserver(self, selector: #selector(self.reloadTableData(_:)), name: NSNotification.Name(rawValue: "ReloadTableData"), object: nil)
+
     }
     
     override func viewWillAppear(_ animated: Bool) {
         let viewController = UINavigationBar.appearance()
         viewController.isTranslucent = false
-        // Reload Table after return from deleting record in DetailViewController
-        self.tableView.reloadData()
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
 
     // MARK: - Table view data source
@@ -73,7 +70,7 @@ class TableViewController: UITableViewController {
 
         return cell
     }
- 
+    // Open selected record at IndexPath of object selected.
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         let indexPath = tableView.indexPathForSelectedRow!
@@ -105,27 +102,10 @@ class TableViewController: UITableViewController {
             tableView.deleteRows(at: [indexPath], with: .fade)
         }
     }
-    
-
-    /*
-    // Override to support rearranging the table view.
-    override func tableView(_ tableView: UITableView, moveRowAt fromIndexPath: IndexPath, to: IndexPath) {
-
-    }
-    */
-
-    /*
-    // Override to support conditional rearranging of the table view.
-    override func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
-        // Return false if you do not want the item to be re-orderable.
-        return true
-    }
-    */
 
     
     // MARK: - Navigation
 
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
     // Unwind to close TableViewController that is presented modally
     @IBAction func closeModalViewController(sender: UIBarButtonItem) {
         self.dismiss(animated: true, completion: nil)
@@ -135,11 +115,10 @@ class TableViewController: UITableViewController {
     // Send user to DetailViewController and pass data for displaying
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if(segue.identifier == "detailVCSegue") {
-            let nav = segue.destination as! UINavigationController
-            let vc = nav.topViewController as! DetailViewController
+            if let vc = segue.destination as? DetailViewController{
             print(valueToPass)
             vc.passedValue = valueToPass
-            vc.lastLocation = 0
+            }
         }else{
             print("Another Segue was called that is not available.")
         }
@@ -170,6 +149,7 @@ class TableViewController: UITableViewController {
             self.results = NSKeyedUnarchiver.unarchiveObject(with: data as Data) as! Array<IPAddress>!
             self.results.sort(by: { $0.countryName < $1.countryName })
             print("Data saved in UserDefaults and results array updated.")
+            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "UpdateNumberOfPinsToDisplay"), object: nil)
         }
 
     }
@@ -187,5 +167,14 @@ class TableViewController: UITableViewController {
             inEditMode = true
         }
     }
-
+    
+    func reloadTableData(_ notification: NSNotification) {
+        
+        let data = notification.userInfo?["array"] as! [IPAddress]
+        self.results.removeAll()
+        self.results = data
+        updateUserDefaults()
+        self.tableView.reloadData()
+    }
+    
 }

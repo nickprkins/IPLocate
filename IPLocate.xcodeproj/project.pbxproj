@@ -39,6 +39,7 @@
 		8C31B6511DB55C6B00847F25 /* TableViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TableViewController.swift; sourceTree = "<group>"; };
 		8C31B6531DB55C7B00847F25 /* DetailViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DetailViewController.swift; sourceTree = "<group>"; };
 		8C31B6561DB55DF400847F25 /* countryFlags */ = {isa = PBXFileReference; lastKnownFileType = folder; path = countryFlags; sourceTree = "<group>"; };
+		8C31B6581DB7D5BD00847F25 /* The Iron Yard.gpx */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "The Iron Yard.gpx"; sourceTree = "<group>"; };
 		8CDEF1AF1DB1486C00E521E3 /* IPLocate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IPLocate.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8CDEF1B21DB1486C00E521E3 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		8CDEF1B41DB1486C00E521E3 /* MapViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapViewController.swift; sourceTree = "<group>"; };
@@ -84,6 +85,7 @@
 			children = (
 				8C31B6561DB55DF400847F25 /* countryFlags */,
 				8CDEF1BE1DB1486C00E521E3 /* Info.plist */,
+				8C31B6581DB7D5BD00847F25 /* The Iron Yard.gpx */,
 			);
 			name = Resources;
 			sourceTree = "<group>";

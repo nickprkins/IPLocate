@@ -25,7 +25,6 @@ class DetailViewController: UIViewController {
     @IBOutlet var contentView: UIView!
     
     var passedValue: String!
-    var lastLocation: Int!
     var results: Array<IPAddress> = []
     let defaults = UserDefaults.standard
     var selectedIPAddress: IPAddress!
@@ -71,6 +70,7 @@ class DetailViewController: UIViewController {
     }
     
     override func viewDidLayoutSubviews() {
+        // Layout bounds of Scroll View
         let scrollViewBounds = scrollView.bounds
         //let containerViewBounds = contentView.bounds
         
@@ -80,7 +80,16 @@ class DetailViewController: UIViewController {
         
         scrollViewInsets.bottom = scrollViewBounds.size.height/2.0
         scrollViewInsets.bottom -= contentView.bounds.size.height/2.0;
-        scrollViewInsets.bottom += 1
+        
+        if(UIDeviceOrientationIsLandscape(UIDevice.current.orientation))
+        {
+            scrollViewInsets.bottom += 175
+        }
+        
+        if(UIDeviceOrientationIsPortrait(UIDevice.current.orientation))
+        {
+            scrollViewInsets.bottom += 1
+        }
         
         scrollView.contentInset = scrollViewInsets
         
@@ -146,21 +155,19 @@ class DetailViewController: UIViewController {
             if record.theIPAddress == "\(selectedIPAddress.theIPAddress)" {
                 let recordToDelete = self.results.index(of: record)
                 self.results.remove(at: recordToDelete!)
+                updateUserDefaults()
+                let data = ["ipaddress" : record]
+                NotificationCenter.default.post(name: NSNotification.Name(rawValue: "RemovePinFromMap"), object: nil, userInfo: data)
                 print("\(record.theIPAddress) record deleted!")
                 break
             }
         }
+        // Call for Table Data to be reloaded and for previous view controller to display
+        let data = ["array" : self.results]
+        NotificationCenter.default.post(name: NSNotification.Name(rawValue: "ReloadTableData"), object: nil, userInfo: data)
+        self.navigationController?.popViewController(animated: true);
         
-        switch lastLocation {
-        case 0:
-            performSegue(withIdentifier: "backToTableSegue", sender: self)
-            break
-        case 1:
-            performSegue(withIdentifier: "backToMapSegue", sender: self)
-            break
-        default:
-            break
-        }
+        dismiss(animated: true, completion: nil)
     }
     
     func applyShadow(object: AnyObject) {
@@ -170,5 +177,17 @@ class DetailViewController: UIViewController {
         layer.shadowOffset = CGSize(width: 3, height: 3)
         layer.shadowOpacity = 0.4
         layer.shadowRadius = 5
+    }
+    
+    // Update data and add it to UserDefaults
+    func updateUserDefaults() {
+        self.defaults.set(NSKeyedArchiver.archivedData(withRootObject: self.results), forKey: "PinsOnMap")
+        if let data = self.defaults.object(forKey: "PinsOnMap") as? NSData {
+            self.results = NSKeyedUnarchiver.unarchiveObject(with: data as Data) as! Array<IPAddress>!
+            self.results.sort(by: { $0.countryName < $1.countryName })
+            print("Data saved in UserDefaults and results array updated.")
+            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "UpdateNumberOfPinsToDisplay"), object: nil)
+        }
+        
     }
 }

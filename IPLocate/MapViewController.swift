@@ -21,7 +21,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
     @IBOutlet var ipaddressCloneTextField: UILabel!
     @IBOutlet var currentLocationButton: UIButton!
     @IBOutlet var ipAddressesInfoView: UIView!
-    @IBOutlet var showAllPinsButton: UIButton!
     @IBOutlet var listViewButton: UIButton!
     @IBOutlet var searchLayoutWidth: NSLayoutConstraint!
     @IBOutlet var searchLayoutHeight: NSLayoutConstraint!
@@ -59,7 +58,8 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         loadDataToMap()
         self.ipAddressSingleTextField.addTarget(self, action:#selector(MapViewController.cloneText(sender:)), for:UIControlEvents.editingChanged)
         
-        self.numberOfPins.text = "\(self.results.count)"
+        //Update number of pins saved on map
+        updateNumberOfPinsToDisplay()
         
         
         //Create Keyboard ToolBar
@@ -70,6 +70,7 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         NotificationCenter.default.addObserver(self, selector: #selector(self.changeSearchView(_:)), name: NSNotification.Name(rawValue: "CloseSearchView"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(self.badIPAddressAlert(_:)), name: NSNotification.Name(rawValue: "HaveBadIPAddress"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(self.removePinFromMap(_:)), name: NSNotification.Name(rawValue: "RemovePinFromMap"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(self.updateNumberOfPinsToDisplay), name: NSNotification.Name(rawValue: "UpdateNumberOfPinsToDisplay"), object: nil)
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -77,6 +78,9 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         applyShadow(object: searchView)
         applyShadow(object: currentLocationButton)
         applyShadow(object: listViewButton)
+        applyShadow(object: ipAddressesInfoView)
+        //Update number of pins saved on map
+        updateNumberOfPinsToDisplay()
     }
 
     
@@ -130,6 +134,8 @@ class MapViewController: UIViewController, MKMapViewDelegate {
                //This is run on the main queue, after the previous code in outer block
                 self.mapView.addAnnotation(newPin)
                 
+                //Update Data and Display
+                self.updateUserDefaults()
                 let region = MKCoordinateRegionMakeWithDistance(newPin.coordinate, 2000, 2000)
                 
                 self.mapView.setRegion(region, animated: true)
@@ -154,10 +160,23 @@ class MapViewController: UIViewController, MKMapViewDelegate {
                 let title = annotation.title!
                 if title == pin.title! {
                     self.mapView.removeAnnotation(annotation)
-                    print("\(annotation.title) was deleted and removed from the map.")
+                    
+                    //Update Data and Display
+                    self.updateUserDefaults()
+                    print("\(title!) was deleted and removed from the map.")
                     break
                 }
             }
+        }
+        
+    }
+    
+    func updateUserDefaults() {
+        self.defaults.set(NSKeyedArchiver.archivedData(withRootObject: self.results), forKey: "PinsOnMap")
+        if let data = self.defaults.object(forKey: "PinsOnMap") as? NSData {
+            self.results = NSKeyedUnarchiver.unarchiveObject(with: data as Data) as! Array<IPAddress>!
+            print("Data saved in UserDefaults and results array updated.")
+            self.updateNumberOfPinsToDisplay()
         }
         
     }
@@ -268,12 +287,15 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         //Is their data saved in UserDefaults? Yes: retrieve No: create
         if let data = self.defaults.object(forKey: "PinsOnMap") as? NSData {
             self.results = NSKeyedUnarchiver.unarchiveObject(with: data as Data) as! Array<IPAddress>!
+            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "UpdateNumberOfPinsToDisplay"), object: nil)
             print("I have data!")
         }else{
             self.defaults.set(NSKeyedArchiver.archivedData(withRootObject: self.results), forKey: "PinsOnMap")
             if let data = self.defaults.object(forKey: "PinsOnMap") as? NSData {
                 self.results = NSKeyedUnarchiver.unarchiveObject(with: data as Data) as! Array<IPAddress>!
+                NotificationCenter.default.post(name: NSNotification.Name(rawValue: "UpdateNumberOfPinsToDisplay"), object: nil)
                 print("I created data, now it is all mine!")
+                
             }
         }
     }
@@ -288,14 +310,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
             
             self.mapView.addAnnotation(newPin)
         }
-    }
-    
-    func updateInformationView() {
-        
-        var intValue = Int(self.numberOfPins.text!)!
-        intValue+=1
-        self.numberOfPins.text = "\(intValue)"
-        
     }
     
     func badIPAddressAlert(_ notification: NSNotification) {
@@ -393,6 +407,10 @@ class MapViewController: UIViewController, MKMapViewDelegate {
         self.ipAddressRangeTextField.resignFirstResponder()
     }
     
+    func updateNumberOfPinsToDisplay() {
+        self.numberOfPins.text = "\(self.results.count)"
+    }
+    
     func findIPOnMap() {
         
         switch searchViewSegmentControl.selectedSegmentIndex {
@@ -407,8 +425,6 @@ class MapViewController: UIViewController, MKMapViewDelegate {
                 for ipAddress in commaArray {
                     self.client.findIPAddress(ipaddress: ipAddress)
             }
-            
-            
             break
         case 1:
             let firstTextField = self.ipAddressSingleTextField.text
